@@ -17,9 +17,10 @@ click, and a pre-filled demo group lets a judge try it in under 30 seconds.
 
 ## How we built it
 Flask (Python) backend, single HTML/CSS/JS frontend with no build step.
-Favourites are resolved to Qloo entity ids via Qloo /search, then
-per-person /v2/insights calls (feature.explainability=true) for movies,
-places, and artists build the affinity lists. Picks are scored
+Favourites are resolved to Qloo entity ids via the official Qloo
+hackathon kit (`qloo api search` from @qloo/qloo-harness), then
+per-person kit calls (`qloo api insights`, feature.explainability=true)
+for movies, places, and artists build the affinity lists. Picks are scored
 deterministically: 50% mean affinity, 30% coverage, 20% lowest affinity —
 so one person's favourite cannot steamroll the group. Every Qloo call is
 shown in the UI's transparency log.
@@ -34,7 +35,7 @@ runs in clearly labelled DEMO MODE on sample data and returns an error,
 not a faked live result, for live calls.
 
 ## Accomplishments that we're proud of
-A working, demoable negotiator end-to-end in one night: live Qloo client
+A working, demoable negotiator end-to-end in one night: Qloo kit client
 with explainability and a call audit log, a fairness-first scorer, a
 polished mobile-friendly UI, and a demo that genuinely shows compromise
 (overall common-ground score 0.88 on the demo group).
@@ -52,7 +53,7 @@ a saved-plan link per group, and a "veto" button so one person can rule
 a pick out and watch the negotiation re-run live.
 
 ## Built With
-Python, Flask, Qloo Taste AI API, HTML, CSS, JavaScript. No paid APIs, no GPU.
+Python, Flask, Qloo Taste AI API via the official Qloo hackathon kit (@qloo/qloo-harness), HTML, CSS, JavaScript. No paid APIs, no GPU.
 
 ## Honest status note for submission
 At the time of writing, this project was tested locally in DEMO MODE

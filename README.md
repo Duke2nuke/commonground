@@ -112,3 +112,15 @@ was faked: no key was available in this environment.
 
 ## Deploy (public demo, for Devpost)
 Render: create a new Web Service from the repo, build `pip install -r requirements.txt`, start `gunicorn app:app --bind 0.0.0.0:$PORT` (see Procfile / render.yaml). Set env var `QLOO_API_KEY` in Render — never commit it. Verify the live demo group at the Render URL before submitting; local-only does not qualify for Qloo.
+
+## Qloo hackathon kit (official, used for all live calls)
+Source: https://github.com/qloo/qloo-hackathon-kit
+Live mode uses ONLY the kit's supported surface, `@qloo/qloo-harness`
+v0.1.26+: `qloo api search` to resolve favourites to entity IDs, then
+`qloo api insights` (filter.type, signal.interests.entities,
+feature.explainability=true, filter.location.query for places) for
+affinity lists. No direct Qloo HTTP calls, no silent fallback to another
+endpoint or credential — a failed kit call surfaces as an error.
+Host requirements for live mode: Node.js 22.19+, the harness installed
+globally, and `QLOO_API_KEY` set as a secret. Demo mode needs none of
+this and is clearly labelled DEMO MODE in the UI.

@@ -20,7 +20,7 @@ from flask import Flask, jsonify, render_template, request
 
 from demo_data import DEMO_CANDIDATES, DEMO_GROUP
 from negotiator import CATEGORIES, negotiate, why_text
-from qloo_client import QlooClient, QlooError
+from qloo_kit_client import QlooKitClient as QlooClient, QlooError
 
 app = Flask(__name__)
 
@@ -46,7 +46,7 @@ def _finish_plan(plan: dict, people: list[str], city: str, mode: str, calls: lis
 def _live_plan(people_in: list[dict], city: str) -> dict:
     client = QlooClient()
     if not client.live:
-        raise QlooError("No QLOO_API_KEY set")
+        raise QlooError("No QLOO_API_KEY set, or the qloo harness is not installed (npm install --global @qloo/qloo-harness)")
     # 1) Resolve every favourite to a Qloo entity id.
     resolved: dict[str, list[dict]] = {}
     for person in people_in:

@@ -31,3 +31,13 @@ HTTP 502. No fake live result was returned.
 - Live Qloo /search + /v2/insights end-to-end.
 - Public hosting / demo link.
 - Devpost submission (deliberately not submitted by this build).
+
+## 5. Qloo hackathon kit integration (31 Oct 2026, ~01:45 IST)
+- Live path rewired to the official kit: `qloo api search` / `qloo api insights`
+  from `@qloo/qloo-harness` v0.1.26, verified by `--dry-run` request shapes
+  (GET https://api.qloo.com/search, GET https://api.qloo.com/v2/insights
+  with filter.type, signal.interests.entities, feature.explainability=true,
+  filter.location.query for places). Direct-API client removed.
+- Live call without a key still returns an honest error, no fake result.
+- Demo mode unchanged and re-tested above: score 0.88.
+- Live end-to-end test still pending: needs the event-issued key.
