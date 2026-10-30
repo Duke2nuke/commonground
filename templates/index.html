@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CommonGround — one evening everyone actually wants</title>
+<style>
+:root{--bg:#12100e;--card:#1d1a17;--card2:#252019;--ink:#f5efe6;--muted:#b8ada0;--gold:#f2b441;--green:#7fd08a;--line:#3a322a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+a{color:var(--gold)}header{max-width:960px;margin:0 auto;padding:28px 20px 8px}
+h1{font-size:clamp(2rem,6vw,3.2rem);line-height:1.05;margin:0}.tag{color:var(--muted);font-size:1.05rem;max-width:640px}
+.banner{max-width:960px;margin:16px auto 0;padding:12px 16px;border:1px solid var(--gold);border-radius:12px;background:#2b2113}
+.banner.live{border-color:var(--green);background:#16241a}
+main{max-width:960px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}
+label{display:block;font-weight:600;margin:10px 0 4px}input,textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#100e0c;color:var(--ink);font:inherit}
+textarea{resize:vertical;min-height:56px}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.row{grid-template-columns:1fr}}
+button{cursor:pointer;border:0;border-radius:12px;padding:13px 20px;font:600 1rem/1.2 system-ui;background:var(--gold);color:#1a1206}
+button.secondary{background:transparent;color:var(--ink);border:1px solid var(--line)}button:disabled{opacity:.55}
+.pick{border-left:5px solid var(--gold);padding:14px 16px;background:var(--card2);border-radius:10px;margin:12px 0}
+.pick h3{margin:0 0 4px;font-size:1.25rem}.why{color:var(--muted)}
+.bar{height:10px;background:#3a322a;border-radius:99px;overflow:hidden;margin:4px 0 10px}.bar i{display:block;height:100%;background:var(--green)}
+.aff{display:grid;grid-template-columns:110px 1fr 44px;gap:8px;align-items:center;font-size:.9rem;color:var(--muted)}
+.score{font-size:2.4rem;font-weight:800}.small{color:var(--muted);font-size:.9rem}
+details{margin-top:10px}pre{white-space:pre-wrap;word-break:break-word;background:#100e0c;padding:12px;border-radius:10px;font-size:.82rem;color:var(--muted)}
+footer{max-width:960px;margin:0 auto;padding:10px 20px 32px;color:var(--muted);font-size:.9rem}
+#err{color:#ff9a8a;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header>
+  <h1>CommonGround</h1>
+  <p class="tag">2–4 people. Different tastes. One evening everyone actually wants — negotiated by Qloo's cross-category taste graph, not by whoever shouts loudest.</p>
+</header>
+
+{% if demo_mode %}
+<div class="banner"><strong>⚠ DEMO MODE — Qloo API key not set.</strong> This page runs on a small curated sample dataset so judges can try it end-to-end. Set <code>QLOO_API_KEY</code> (see README) to switch to live Qloo results. Demo results are <strong>not</strong> live Qloo results.</div>
+{% else %}
+<div class="banner live"><strong>● LIVE MODE — Qloo API key set.</strong> Picks come from Qloo /search + /v2/insights. The Qloo calls made are listed under each plan.</div>
+{% endif %}
+
+<main>
+  <section class="card">
+    <h2 style="margin-top:0">Your group</h2>
+    <label>City <input id="city" value="Bengaluru" placeholder="e.g. Bengaluru"></label>
+    <div id="people"></div>
+    <p>
+      <button class="secondary" id="addPerson" type="button">+ Add person</button>
+      <button class="secondary" id="demoBtn" type="button">Try the demo group (30 seconds)</button>
+    </p>
+    <button id="go" type="button">Find our common ground →</button>
+    <p id="err"></p>
+  </section>
+
+  <section class="card" id="results" hidden>
+    <div class="row"><div><div class="score" id="cgScore">—</div><div class="small">Common-ground score · mean of the three winning picks</div></div>
+    <div><p class="small" id="planMeta"></p><button class="secondary" id="copyBtn" type="button">Copy shareable plan</button></div></div>
+    <div id="picks"></div>
+    <details><summary>Qloo calls made (transparency log)</summary><pre id="calls">—</pre></details>
+    <details open><summary>Shareable plan</summary><pre id="shareText"></pre></details>
+  </section>
+</main>
+<footer>CommonGround · Built for the Qloo Agentic Hackathon · Picks are scored from Qloo affinities: 50% mean + 30% coverage + 20% lowest score, so one person's favourite cannot steamroll the group. No paid APIs, no GPU.</footer>
+
+<script>
+const peopleEl=document.getElementById('people');
+function personCard(name='',favs=''){
+  const d=document.createElement('div');d.className='row person';
+  d.innerHTML=`<div><label>Name<input class="pname" value="${name}"></label></div>
+  <div><label>Favourites (comma-separated, 1–3)<input class="pfavs" value="${favs}" placeholder="e.g. Dune, A.R. Rahman, Sushi"></label></div>`;
+  return d;
+}
+function seedPeople(list){peopleEl.innerHTML='';list.forEach(p=>peopleEl.appendChild(personCard(p.name,p.favourites)));}
+seedPeople([{name:'Maya',favourites:'Dune, A.R. Rahman, Sushi'},{name:'Leo',favourites:'Interstellar, Coldplay, Italian'}]);
+document.getElementById('addPerson').onclick=()=>{if(peopleEl.children.length>=4)return alert('Max 4 people.');peopleEl.appendChild(personCard());};
+document.getElementById('demoBtn').onclick=async()=>{
+  const r=await fetch('/api/demo-group');const g=await r.json();
+  document.getElementById('city').value=g.city;
+  seedPeople(g.people.map(p=>({name:p.name,favourites:p.favourites.join(', ')})));
+  await run(true);
+};
+function collect(){return [...peopleEl.querySelectorAll('.person')].map(el=>({name:el.querySelector('.pname').value.trim(),favourites:el.querySelector('.pfavs').value.trim()}));}
+const EMOJI={film:'🎬',eat:'🍽️',music:'🎵'},LABEL={film:'Film',eat:'A place to eat',music:'Music vibe'};
+async function run(demo=false){
+  const err=document.getElementById('err');err.textContent='';
+  const btn=document.getElementById('go');btn.disabled=true;btn.textContent='Negotiating…';
+  try{
+    const r=await fetch('/api/plan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({city:document.getElementById('city').value,people:collect(),demo})});
+    const data=await r.json();if(!r.ok)throw new Error(data.error||'Request failed');
+    render(data);
+  }catch(e){err.textContent='⚠ '+e.message;}
+  btn.disabled=false;btn.textContent='Find our common ground →';
+}
+document.getElementById('go').onclick=()=>run(false);
+function affBars(pick){return Object.entries(pick.affinity_by_person).map(([n,a])=>`<div class="aff"><span>${n}</span><span class="bar"><i style="width:${Math.round(a*100)}%"></i></span><span>${a.toFixed(2)}</span></div>`).join('');}
+function render(data){
+  document.getElementById('results').hidden=false;
+  document.getElementById('cgScore').textContent=(data.common_ground_score*100).toFixed(0)+'%';
+  document.getElementById('planMeta').textContent=`${data.city} · ${data.people.join(', ')} · Mode: ${data.mode.toUpperCase()}${data.mode==='demo'?' (sample data, not live Qloo)':''}`;
+  const picks=document.getElementById('picks');picks.innerHTML='';
+  let share=`CommonGround plan — ${data.city}\nGroup: ${data.people.join(', ')}\nCommon-ground score: ${(data.common_ground_score*100).toFixed(0)}%\n\n`;
+  for(const k of ['film','eat','music']){
+    const w=data.plan[k].winner;if(!w)continue;
+    share+=`${EMOJI[k]} ${LABEL[k]}: ${w.name}\n${w.why}\n\n`;
+    const runn=data.plan[k].runners_up.map(r=>`${r.name} (${(r.score*100).toFixed(0)}%)`).join(' · ');
+    picks.innerHTML+=`<div class="pick"><h3>${EMOJI[k]} ${LABEL[k]}: ${w.name}</h3><div class="small">${w.tags.join(' · ')}</div><p class="why">${w.why}</p>${affBars(w)}<p class="small">Also considered: ${runn||'—'}</p></div>`;
+  }
+  document.getElementById('shareText').textContent=share;
+  document.getElementById('calls').textContent=data.calls.length?data.calls.map(c=>`GET ${c.url}\n  params: ${JSON.stringify(c.params)}`).join('\n\n'):'No Qloo calls in DEMO MODE — sample dataset only. Set QLOO_API_KEY to see live calls here.';
+  document.getElementById('copyBtn').onclick=async()=>{await navigator.clipboard.writeText(share);document.getElementById('copyBtn').textContent='Copied ✓';setTimeout(()=>document.getElementById('copyBtn').textContent='Copy shareable plan',2000);};
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>
